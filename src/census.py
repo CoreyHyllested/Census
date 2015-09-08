@@ -44,10 +44,19 @@ def configure_network(args):
 	return ua
 
 
+def configure_db():
+	def safe_mkdir_local(path):
+		directory = os.getcwd() + path
+		if (os.path.exists(directory) == False):
+			os.makedirs(directory)
+
+	safe_mkdir_local('/data/')
+
+
 
 def load_sources(config_params):
 	sources = []
-	sources.append('https://www.google.com')
+	sources.append( Website('https://soulcrafting.co') )
 
 	if (False): 
 		random.shuffle(sources, random.random)
@@ -72,8 +81,8 @@ if __name__ == '__main__':
 	parser.add_argument('-S', '--source',								help='Single source')
 	args = parser.parse_args()
 
-#	config_output_directories()
 	configure_network(args)
+	configure_db()
 
 	q = load_sources(args)
 	for thread_id in xrange(THREADS):

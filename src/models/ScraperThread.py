@@ -1,6 +1,7 @@
 import threading, time
 import random
 import Queue
+from models		import *
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
 
@@ -17,13 +18,12 @@ class ScraperThread(threading.Thread):
 		self.doc_error	= 0
 		self.doc_dload	= 0
 
-
 	def run(self):
 		while not self.q.empty():
 			ts = dt.now()
-			document = self.q.get()
-			print document		#document.get_snapshot()
-			ts_diff = dt.now() - ts
+			site = self.q.get()
+			site.create_snapshot()
+			ts_diff	 = dt.now() - ts
 
 #			self.doc_count = self.doc_count + 1
 #			if (document.doc_state == 0x200):	self.doc_dload = self.doc_dload + 1
@@ -35,3 +35,4 @@ class ScraperThread(threading.Thread):
 			print 'Errors:'
 			pp(self.errors)
 
+	
