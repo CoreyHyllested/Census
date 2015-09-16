@@ -3,7 +3,7 @@ import requests, urltools
 from pprint		import pprint as pp
 
 #from models.Snapshot	import *
-from models.Document	import *
+from models.documents import *
 
 
 
@@ -57,15 +57,13 @@ class Website(object):
 
 	def __load_meta(self):
 		self.doc_robots	 = Document(self, '/robots.txt'  )
-		self.doc_sitemap = Document(self, '/sitemap.xml' )
+		self.doc_sitemap = Sitemap(self,  '/sitemap.xml' )
 		self.doc_robots.load()
-		self.doc_sitemap.load()
-
+		self.sitemap = self.doc_sitemap.urls()
 
 
 	def location(self, new_location=None):
 		return os.getcwd() + '/data/domain/' + self.domain
-
 
 
 	def create_snapshot(self, context=None):
@@ -73,14 +71,11 @@ class Website(object):
 
 		try:
 #			self.snapshot.prime_snapshot()		Get robots, humans, sitemap.xml
-			self.snapshot.prime_documents(5)
+			self.snapshot.prime_documents(5, sitemap=self.sitemap)
 		except Exception as e:
 			print type(e), e
 		finally:
 			pass
-
-	def robots(self, ctx):	pass
-	def sitemap(self, ctx):	pass
 
 
 
