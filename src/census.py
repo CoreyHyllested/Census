@@ -10,7 +10,7 @@ from datetime	import datetime as dt
 from models		import *
 
 
-VERSION = 0.01
+VERSION = 0.02
 UA_VER	= 0.1
 THREADS	= 1
 
@@ -20,6 +20,7 @@ threads	= []
 
 
 def configure_network(args):
+	urllib3.disable_warnings()
 	host_response = requests.get('http://icanhazIP.com')
 
 	def create_connection(address, timeout=None, source_address=None):
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 	parser.add_argument('-S', '--source',								help='Single source')
 	args = parser.parse_args()
 
-	configure_network(args)
+	#configure_network(args)
 	configure_db()
 
 	q = load_sources(args)
