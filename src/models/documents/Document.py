@@ -1,7 +1,5 @@
 import sys, os, random, time
-import requests, urllib3, socks, socket
-import ssl, certifi
-import re, json
+import requests, ssl, certifi
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
 
@@ -10,22 +8,12 @@ from models.Website  import *
 from models.Snapshot import *
 
 
-
-class DocState(object):
-	EMPTY		= 0
-	READ_WWW	= 0x200
-	READ_CACHE	= 0x201
-	READ_FAIL	= 0x404
-	READ_QUIT	= 0xFFF
-
-
-
-
 class Document(object):
 	errors = {}
 
-	def __init__(self, website, resource=None, force_webcache=False):
+	def __init__(self, website, snapshot=None, resource=None, force_webcache=False):
 		self.website	= website
+		self.snapshot	= snapshot
 		self.resource	= resource
 		self.__content	= None
 		self.url		= urltools.normalize(website.uri + str(resource))
@@ -39,7 +27,7 @@ class Document(object):
 	def __str__  (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
 
 	def content	 (self): return self.__content
-	
+
 
 
 	def snapshot_exists(self, days=30):
@@ -182,3 +170,4 @@ class Document(object):
 #		snapshot_file = self.snapshot_exists(days=21)
 #		if (snapshot_file): return self.read_cache(debug)
 		#timestamp = dt.now().strftime('%Y-%m-%d')
+
