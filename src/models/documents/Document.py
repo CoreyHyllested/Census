@@ -11,14 +11,16 @@ from models.Snapshot import *
 class Document(object):
 	errors = {}
 
-	def __init__(self, website, snapshot=None, resource=None, force_webcache=False):
+	def __init__(self, website, snapshot=None, resource=None, force_webcache=False, name=None):
 		self.website	= website
 		self.snapshot	= snapshot
 		self.resource	= resource
+		self.filename = str(self.resource).lstrip('/')
+		if (name): self.filename = name
+
 		self.__content	= None
+		self.timestamp	= dt.now().strftime('%Y-%m-%d')
 		self.url		= urltools.normalize(website.uri + str(resource))
-#		self.snapshot = snapshot
-#		self.filename = 'document.html'
 
 		self.use_webcache = force_webcache
 	
@@ -57,16 +59,13 @@ class Document(object):
 
 
 	def get_document(self, debug=False):
-		if (debug): print '%s get_document(%r)' % (self.website.domain, self.resource)
-		# check cache
-
 		try:
+			if (debug): print '%s get_document(%r)' % (self.website.domain, self.resource)
 			self.__download(debug)
 		except Exception as e:
-			print e
-			print 're-raising'
-			#raise e
-		return True
+			print 're-raising', type(e), e
+			raise e
+		return self
 
 
 
@@ -86,7 +85,7 @@ class Document(object):
 
 
 	def __download(self, debug=False):
-		print 'downloading %s' % (self.url)
+		if (debug): print 'downloading %s' % (self.url)
 
 		try:
 			session  = self.website.session()
@@ -125,6 +124,8 @@ class Document(object):
 			fp = open(file_path, 'w+')
 			fp.truncate()
 			fp.write(self.__content)
+			if (debug): print 'wrote doc %s file_path %s' % (self.filename, file_path)
+
 		except Exception as e:
 			print type(e), e
 		finally:
@@ -157,17 +158,11 @@ class Document(object):
 
 
 	def __cache_path(self):
-		x = self.website.location() + '/documents' + str(self.resource)
-		print x
-		return x
-		#directory = self.website.location() + '/' + str(timestamp)
-		#safe_mkdir(directory)
-		#return directory + '/' + self.filename
-		#return filename
-
+		if (self.snapshot):
+			return self.snapshot.location() + '/'           + self.filename
+		return     self.website.location()  + '/documents/' + self.filename
 
 
 #		snapshot_file = self.snapshot_exists(days=21)
 #		if (snapshot_file): return self.read_cache(debug)
-		#timestamp = dt.now().strftime('%Y-%m-%d')
 
