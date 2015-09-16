@@ -74,7 +74,6 @@ class Document(object):
 
 		try:
 			self.__download(debug)
-			self.__save_doc(debug)
 		except Exception as e:
 			print e
 			print 're-raising'
@@ -102,13 +101,14 @@ class Document(object):
 		print 'downloading %s' % (self.url)
 
 		try:
-			session  = requests.session()
+			session  = self.website.session()
 			response = session.get(self.url)
 			response.raise_for_status()
 			self.website.raise_for_errors(response)
 
 			# save content
 			self.__content = response._content
+			self.__save_doc(debug)
 		except requests.exceptions.HTTPError:
 			print 'HTTPError %d: %s' % (response.status_code, self.url)
 #			self.doc_source.add_error('HTTPError', self.url)
