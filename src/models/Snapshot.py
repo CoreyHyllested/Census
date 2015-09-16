@@ -1,9 +1,8 @@
 import sys, os, time, json
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
-import Queue
 
-from models.Document import *
+from models.documents.Document import *
 
 
 class SnapshotState(object):
@@ -15,20 +14,23 @@ class SnapshotState(object):
 
 class Snapshot(object):
 	errors = {}
-	ratelimited = Queue.Queue()
-	DIR_RAWHTML = os.getcwd() + '/data/'
 
 	def __init__(self, website=None, context=None):
 		self.website	= website
 		self.documents	= []
 
 		self.state		= SnapshotState.EMPTY
-		self.location	= website.location()
 		self.timestamp	= dt.now()
+
+		location = self.location()
+		if (not os.path.exists(location)):
+			os.makedirs(location)
+
 
 
 	def __repr__ (self):	return '<Snapshot %r %r>'% (self.website.domain, self.timestamp.strftime('%Y-%m-%d-%H'))
 	def __str__  (self):	return '<Snapshot %r %r>'% (self.website.domain, self.timestamp.strftime('%Y-%m-%d-%H'))
+	def location (self):	return self.website.location() + '/snapshots/' + self.timestamp.strftime('%Y-%m-%d')
 
 
 	def __read_cache_path(self):
@@ -37,37 +39,37 @@ class Snapshot(object):
 
 	def __write_cache_path(self):
 		timestamp = dt.now().strftime('%Y-%m-%d')
-		directory = self.location + '/' + str(timestamp)
+		directory = self.website.location() + '/' + str(timestamp)
 		safe_mkdir(directory)
 		return directory + '/' + self.filename
 
 
 
-	def prime_documents(self, count=5):
-		for document_id in xrange(count):
-			self.documents.append(Document(self))
+	def prime(self, count=5):
+		root = Document(self.website, snapshot=self, resource='/', name='root').get_document(debug=True)
+		urls = root.find_urls(all_urls=False)
+		self.documents.append(root)
+
+#		for document_id in xrange(count):
+#			self.documents.append( Document(self.website, self ))
 
 
 
 	def snapshot_exists(self, days=30):
-		if os.path.exists(self.location) is False:
+		if os.path.exists(self.website.location()) is False:
 			return None
 		last_ss = None
 		last_ts = days
-		for dir_name in os.listdir(self.location):
-			if (os.path.isdir(self.location + '/' + dir_name) is False):
+		for dir_name in os.listdir(self.website.location()):
+			if (os.path.isdir(self.website.location() + '/' + dir_name) is False):
 				continue
 
 			timedelta = dt.now() - dt.strptime(dir_name, '%Y-%m-%d')
 			if (timedelta.days < last_ts):
 				last_ts = timedelta.days
-				last_ss = self.location + '/' + dir_name + '/' + self.filename
+				last_ss = self.website.location() + '/' + dir_name + '/' + self.filename
 		return last_ss
 
-
-
-	def add_document(self, debug=False):
-		return True
 
 
 	def read_cache(self, debug=False):

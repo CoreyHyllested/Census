@@ -2,13 +2,13 @@ import os, time
 import requests, urltools
 from pprint		import pprint as pp
 
-#from models.Snapshot	import *
+from models.Snapshot	import *
 from models.documents import *
 
 
 
 class Website(object):
-	SECONDS = 60
+	SECONDS = 5
 
 	def __init__(self, website, site_ctx=None, debug=False):
 		self.uri	= urltools.normalize(website)
@@ -38,7 +38,7 @@ class Website(object):
 
 	def sleep(self, seconds=None):
 		if (not seconds):
-			seconds = self.SECONDS + random.randint(0, 15)
+			seconds = self.SECONDS + random.randint(0, 5)
 		time.sleep(seconds)
 
 
@@ -56,8 +56,8 @@ class Website(object):
 
 
 	def __load_meta(self):
-		self.doc_robots	 = Document(self, '/robots.txt'  )
-		self.doc_sitemap = Sitemap(self,  '/sitemap.xml' )
+		self.doc_robots	 = Document(self, None, '/robots.txt'  )
+		self.doc_sitemap = Sitemap(self,  None, '/sitemap.xml' )
 		self.doc_robots.load()
 		self.sitemap = self.doc_sitemap.urls()
 
@@ -67,11 +67,12 @@ class Website(object):
 
 
 	def create_snapshot(self, context=None):
+		print 'create snapshot'
 		self.snapshot = Snapshot(self, context=None)
 
 		try:
 #			self.snapshot.prime_snapshot()		Get robots, humans, sitemap.xml
-			self.snapshot.prime_documents(5, sitemap=self.sitemap)
+			self.snapshot.prime(5)
 		except Exception as e:
 			print type(e), e
 		finally:
