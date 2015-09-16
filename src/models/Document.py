@@ -1,10 +1,12 @@
-import sys, os, time
+import sys, os, random, time
 import requests, urllib3, socks, socket
-import re, random, time, json
-import Queue
+import ssl, certifi
+import re, json
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
 
+from bs4 import BeautifulSoup, Comment
+from models.Website  import *
 from models.Snapshot import *
 
 
@@ -21,22 +23,24 @@ class DocState(object):
 
 class Document(object):
 	errors = {}
-	ratelimited = Queue.Queue()
-	DIR_RAWHTML = os.getcwd() + '/data/raw/'
 
-	def __init__(self, snapshot, uri=None, force_webcache=False):
-		self.uri = uri
-		self.snapshot = snapshot
-		self.filename = 'document.html'
-		self.content = None
+	def __init__(self, website, resource=None, force_webcache=False):
+		self.website	= website
+		self.resource	= resource
+		self.__content	= None
+		self.url		= urltools.normalize(website.uri + str(resource))
+#		self.snapshot = snapshot
+#		self.filename = 'document.html'
 
 		self.use_webcache = force_webcache
 	
 
+	def __repr__ (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
+	def __str__  (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
 
-	def __repr__ (self): return '<Document %r/%r>' % (self.snapshot, self.uri)
-	def __str__  (self): return '<Document %r/%r>' % (self.snapshot, self.uri)
+	def content	 (self): return self.__content
 	
+
 
 	def snapshot_exists(self, days=30):
 		if os.path.exists(self.location) is False:
@@ -56,15 +60,21 @@ class Document(object):
 
 
 
+	def load(self, debug=False):
+		self.__load_doc(debug)
+
+		if (self.__content == None):
+			self.get_document()	# will download
+
+
+
 	def get_document(self, debug=False):
-		# check if a recent document already exists?
-		if (debug): print '\n%s.get_document(%r)' % (self.doc_source.SOURCE_TYPE, self)
-		snapshot_file = self.snapshot_exists(days=21)
-		if (snapshot_file): return self.read_cache(debug)
+		if (debug): print '%s get_document(%r)' % (self.website.domain, self.resource)
+		# check cache
 
 		try:
-			self.download(debug)
-			self.write_cache(debug)
+			self.__download(debug)
+			self.__save_doc(debug)
 		except Exception as e:
 			print e
 			print 're-raising'
@@ -78,84 +88,97 @@ class Document(object):
 		return self.snapshot_exists(days=365)
 
 
-	def __write_cache_path(self):
-		timestamp = dt.now().strftime('%Y-%m-%d')
-		directory = self.location + '/' + str(timestamp)
-		safe_mkdir(directory)
-		return directory + '/' + self.filename
 
 
-
-	def read_cache(self, debug=False):
+	def __read_cache(self, debug=False):
 		file_path = self.__read_cache_path()
 		if (file_path):
-			fp = None
-			try:
-				if (debug): print '%s.reading cache...' % (self.doc_source.SOURCE_TYPE)
-				fp = open(file_path, 'r')
-				self.content	= fp.read()
-				self.doc_state	= DocState.READ_CACHE
-			except Exception as e:
-				print e
-			finally:
 				if (fp): fp.close()
 
 
 
-	def download(self, debug=False):
-		print '%s.download doc' % (self.doc_source.SOURCE_TYPE)
-		self.doc_state	= DocState.READ_FAIL
+
+	def __download(self, debug=False):
+		print 'downloading %s' % (self.url)
 
 		try:
-			s = requests.Session()
-			response = s.get(self.uri)
+			session  = requests.session()
+			response = session.get(self.url)
 			response.raise_for_status()
+			self.website.raise_for_errors(response)
 
-			# check document for any rate-limited message, if so, try using the webcache
-			if 'Sorry, we had to limit your access to this website.' in response._content:
-				self.ratelimited.put(self.uri)
-				print 'rate-limited: %d times, retry with %s' % (len(self.ratelimited.qsize()), self.webcache)
-				response = s.get(self.webcache)
-				if 'Sorry, we had to limit your access to this website.' in response._content:
-					print 'Rate limited again.'
-					#raise Exception('WEBCACHE-FAILED')
-			if (response._content): 
-				self.content	= response._content
-				self.doc_state	= DocState.READ_WWW
-			else:
-				print 'Something fucked up'
-				print 'status code(%d|%s) elapsed %s, encoding %s' % (response.status_code, response.reason, response.elapsed, response.encoding)
-				pp(response.headers)
-		except requests.exceptions.HTTPError as e:
-			print 'HTTPError %d: %s' % (response.status_code, self.uri)
-			self.doc_source.add_error('HTTPError', self.uri)
-			# perhaps take this URL out of rotation.
-			if (response.status_code == 500): self.doc_state = DocState.READ_QUIT
-			print e
-		except requests.exceptions.ConnectionError as e:
-			print e
-			self.doc_source.add_error('ConnectionError', self.uri)
-			print 'Connection Error: trying to sleep for 5min'
-			self.doc_source.sleep(5 * 60)
+			# save content
+			self.__content = response._content
+		except requests.exceptions.HTTPError:
+			print 'HTTPError %d: %s' % (response.status_code, self.url)
+#			self.doc_source.add_error('HTTPError', self.url)
+		except requests.exceptions.ConnectionError:
+			print 'Connection Error: trying to sleep for 2 min'
+			#self.doc_source.add_error('ConnectionError', self.url)
+			self.website.sleep(2 * 60)
 		except Exception as e:
 			print 'General Exception'
-			self.doc_source.add_error('download_failed', self.uri)
 			print type(e), e
+			#self.doc_source.add_error('download_failed', self.url)
 			print 'content:', response._content
 		finally:
 			# hit URL, always sleep
-			self.doc_source.sleep()
+			self.website.sleep()
 
 
 
-	def write_cache(self, debug=False):
-		if (not self.content): return
-		file_path = self.__write_cache_path()
-		if (debug): print '%s.caching file %s' % (self.doc_source.SOURCE_TYPE, file_path)
-		filesystem.write_file(file_path, self.content)
+	def __save_doc(self, debug=False):
+		if (not self.__content): return
+
+		file_path = self.__cache_path()
+
+		fp = None
+		try:
+			fp = open(file_path, 'w+')
+			fp.truncate()
+			fp.write(self.__content)
+		except Exception as e:
+			print type(e), e
+		finally:
+			if (fp): fp.close()
+
+
+
+	def __load_doc(self, debug=False):
+		if (self.__content): return self.__content
+		if (debug): print 'load_doc %s/%s' % (self.website, self.resource)
+
+		fp = None
+		try:
+			fp = open(self.__cache_path(), 'r')
+			self.__content = fp.read()
+		except IOError:
+			pass
+		except Exception as e:
+			print type(e), e
+		finally:
+			if (fp): fp.close()
+		return self.__content
+
 
 
 	def backup(self, file_path=None, debug=False):
 		if (not file_path):
-			file_path = self.location + '/' + self.filename[:-5] + '-' + dt.now().strftime('%Y-%m-%d-%H') + '.backup'
-			filesystem.write_file(file_path, self.content)
+			file_path = self.website.location() + '/' + self.filename[:-5] + '-' + dt.now().strftime('%Y-%m-%d-%H') + '.backup'
+			filesystem.write_file(file_path, self.__content)
+
+
+	def __cache_path(self):
+		x = self.website.location() + '/documents' + str(self.resource)
+		print x
+		return x
+		#directory = self.website.location() + '/' + str(timestamp)
+		#safe_mkdir(directory)
+		#return directory + '/' + self.filename
+		#return filename
+
+
+
+#		snapshot_file = self.snapshot_exists(days=21)
+#		if (snapshot_file): return self.read_cache(debug)
+		#timestamp = dt.now().strftime('%Y-%m-%d')
