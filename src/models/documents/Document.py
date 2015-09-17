@@ -11,37 +11,43 @@ from models.Snapshot import *
 class Document(object):
 	errors = {}
 
-	def __init__(self, website, snapshot=None, resource=None, force_webcache=False, name=None):
+	def __init__(self, website, uri, snapshot=None, force_webcache=False, name=None):
+		print 'Document (%s, %s, %r, %s)' % (website.domain, uri, snapshot, name)
 		self.website	= website
 		self.snapshot	= snapshot
-		self.resource	= Document.normalize_url_path(resource)
-		self.filename	= self.__normalize_resource_name(name)
-		if (name): self.filename = name
 
+		self.__create_url(uri, name)
 		self.__content	= None
 		self.timestamp	= dt.now().strftime('%Y-%m-%d')
-		self.url		= urltools.normalize(website.uri + str(self.resource))
 
 		self.use_webcache = force_webcache
 	
 
-	def __repr__ (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
-	def __str__  (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
+	def __repr__ (self): return '<Document %r/%s>' % (self.website.domain, self.parsed_uri[7])
+	def __str__  (self): return '<Document %r/%s>' % (self.website.domain, self.parsed_uri[7])
 	def content	 (self): return self.__content
 
 
+	def __create_url(self, uri, filename):
+		self.parsed_uri	= urltools.parse(str(uri))
+
+		if ((uri[0] == '/') or self.parsed_uri[4] == ''):
+			self.parsed_uri = urltools.parse(self.website.uri + str(uri))
+
+		if (self.parsed_uri[4:6] != self.website.parsed[4:6]):
+			# allows subdomain to differ!
+			raise Exception ('Document (Invalid, domain does not match)')
+
+		self.filename	= filename or Document.normalize_filename(self.parsed_uri.path)
+		self.url		= urltools.construct(self.parsed_uri)
+		#print 'Document (%s) => %s' % (self.url, self.filename)
+
+
+
 	@staticmethod
-	def normalize_url_path(path):
-		return urltools.parse(path)[7]
-
-
-	def __normalize_resource_name(self, name=None):
-		if (name): return name
-
-		name = self.resource
-		if (name == '/'): name = 'root'
-		return name.lstrip('/').replace('/', '_')
-
+	def normalize_filename(path):
+		if (path == '/'): return 'root'
+		return path.lstrip('/').replace('/', '_')
 
 
 	def snapshot_exists(self, days=30):
@@ -119,7 +125,7 @@ class Document(object):
 		except requests.exceptions.ConnectionError:
 			print 'Connection Error: (%s) trying to sleep for 2 min' % self.url
 			#self.doc_source.add_error('ConnectionError', self.url)
-			self.website.sleep(2 * 60)
+			self.website.sleep(5)
 		except Exception as e:
 			print 'General Exception'
 			print type(e), e
