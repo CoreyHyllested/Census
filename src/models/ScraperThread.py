@@ -20,9 +20,10 @@ class ScraperThread(threading.Thread):
 
 	def run(self):
 		while not self.q.empty():
+
 			ts = dt.now()
-			site = self.q.get()
-			site.create_snapshot()
+			document = self.q.get()
+			document.load(debug=True)
 			ts_diff	 = dt.now() - ts
 
 #			self.doc_count = self.doc_count + 1

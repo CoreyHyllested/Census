@@ -9,12 +9,13 @@ from pprint		import pprint as pp
 from datetime	import datetime as dt 
 from models		import *
 
+from models.Snapshot			import *
+from models.documents.Document	import *
 
-VERSION = 0.02
+VERSION = 0.03
 UA_VER	= 0.1
 THREADS	= 1
 
-sources = []
 threads	= []
 
 
@@ -59,12 +60,15 @@ def load_sources(config_params):
 	sources = []
 	sources.append( Website('https://soulcrafting.co') )
 
-	if (False): 
+	if (False):
 		random.shuffle(sources, random.random)
 
 	q = Queue.Queue()
 	for website in sources:
-		q.put(website)
+		snapshot = website.create_snapshot()
+		docs = snapshot.documents
+		for document in docs:
+			q.put(document)
 
 	print 'PrivacyCensus - queue size %d' % (q.qsize())
 	return q
