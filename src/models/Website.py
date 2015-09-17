@@ -12,11 +12,11 @@ class Website(object):
 
 	def __init__(self, website, site_ctx=None, debug=False):
 		self.uri	= urltools.normalize(website)
-		self.parsed	= urltools.parse(website.lower())
-		self.domain	= '.'.join(self.parsed[3:6]).lstrip('www.')
+		self.parsed	= urltools.parse(website)
+		self.domain	= '.'.join(self.parsed[4:6]).lstrip('www.')
 
 		self.robots = None
-		self.sitemap = None
+		self.sitemap = None		# list of documents
 		self.error	= {}
 		self.debug	= debug
 
@@ -56,10 +56,10 @@ class Website(object):
 
 
 	def __load_meta(self):
-		self.doc_robots	 = Document(self, None, '/robots.txt'  )
-		self.doc_sitemap = Sitemap(self,  None, '/sitemap.xml' )
+		self.doc_robots	 = Document(self, '/robots.txt',	None)
+		self.doc_sitemap = Sitemap(self,  '/sitemap.xml',	None)
 		self.doc_robots.load()
-		self.sitemap = self.doc_sitemap.urls()
+		self.sitemap = self.doc_sitemap.documents()
 
 
 	def location(self, new_location=None):
@@ -68,13 +68,7 @@ class Website(object):
 
 	def create_snapshot(self, context=None):
 		self.snapshot = Snapshot(self, context=None)
-
-		try:
-			self.snapshot.prime(5)
-		except Exception as e:
-			print type(e), e
 		return self.snapshot
-
 
 
 	def raise_for_errors(self, response):
