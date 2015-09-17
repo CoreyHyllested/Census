@@ -24,6 +24,7 @@ class Snapshot(object):
 
 		self.timestamp	= dt.now()
 		self.state		= SnapshotState.EMPTY
+		self.__session	= None
 
 		location = self.location()
 		if (not os.path.exists(location)):
@@ -34,7 +35,29 @@ class Snapshot(object):
 
 	def __repr__ (self):	return '<Snapshot %r %r>'% (self.website.domain, self.timestamp.strftime('%Y-%m-%d-%H'))
 	def __str__  (self):	return '<Snapshot %r %r>'% (self.website.domain, self.timestamp.strftime('%Y-%m-%d-%H'))
-	def location (self):	return self.website.location() + '/snapshots/' + self.timestamp.strftime('%Y-%m-%d')
+
+
+
+	def collect_snapshot(self, debug=False):
+		for document in self.documents:
+			document.load(debug=debug)
+		if (debug): print self.website.domain, 'cookies:'
+		pp(self.cookies())
+
+
+	def location(self):
+		return self.website.location() + '/snapshots/' + self.timestamp.strftime('%Y-%m-%d')
+
+
+	def session(self):
+		if (not self.__session):
+			self.__session = requests.Session()
+		return self.__session
+
+
+	def cookies(self):
+		session = self.session()
+		return requests.utils.dict_from_cookiejar(session.cookies)
 
 
 	def __read_cache_path(self):
