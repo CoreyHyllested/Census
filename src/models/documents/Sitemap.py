@@ -14,7 +14,7 @@ class Sitemap(Document):
 
 	def parse(self):
 		soup = BS4(self.content())
-		urls = soup.findAll('url')
+		urls = soup.find_all('url')
 
 		for url in urls:
 			uri  = url.find('loc')
@@ -29,9 +29,8 @@ class Sitemap(Document):
 		# BeautifulStoneSoup to parse the document
 		if (not self.sitemap_urls):
 			self.load()
-			if (self.content() == None):
-				raise Exception('No Sitemap found')	
-			self.parse()
+			if (self.content()):
+				self.parse()
 		return self.sitemap_urls
 
 		
