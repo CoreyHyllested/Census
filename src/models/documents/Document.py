@@ -44,8 +44,6 @@ class Document(object):
 
 
 
-
-
 	def snapshot_exists(self, days=30):
 		if os.path.exists(self.location) is False:
 			return None
@@ -97,14 +95,18 @@ class Document(object):
 				if (fp): fp.close()
 
 
+	def __session(self):
+		if (self.snapshot):
+			return self.snapshot.session()
+		return self.website.session()
 
 
 	def __download(self, debug=False):
 		if (debug): print 'downloading %s' % (self.url)
 
 		try:
-			session  = self.website.session()
-			response = session.get(self.url)
+			session = self.__session()
+			response = session.get(self.url, verify=False)
 			response.raise_for_status()
 			self.website.raise_for_errors(response)
 
@@ -115,7 +117,7 @@ class Document(object):
 			print 'HTTPError %d: %s' % (response.status_code, self.url)
 #			self.doc_source.add_error('HTTPError', self.url)
 		except requests.exceptions.ConnectionError:
-			print 'Connection Error: trying to sleep for 2 min'
+			print 'Connection Error: (%s) trying to sleep for 2 min' % self.url
 			#self.doc_source.add_error('ConnectionError', self.url)
 			self.website.sleep(2 * 60)
 		except Exception as e:
