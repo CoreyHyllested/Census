@@ -1,4 +1,4 @@
-import sys, os, time, json
+import os, random
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
 
@@ -51,13 +51,16 @@ class Snapshot(object):
 
 	def prime(self, count=5):
 		root = HTML(self.website, snapshot=self, resource='/', name='root').load(debug=True)
-		print 'got root document -- now check on urls'
 		self.site_urls.extend( root.site_urls(debug=True) )
 		self.documents.append( root )
 
-		print 'got root document -- extended urls -- now pick em'
-		for resource in self.site_urls[0:count]:
-			self.documents.append( Document(self.website, snapshot=self, resource=resource ))
+		# randomize resource list
+		self.site_urls = list(set(self.site_urls))
+		random.shuffle(self.site_urls, random.random)
+		for resource in self.site_urls[:count]:
+			doc = Document(self.website, snapshot=self, resource=resource)
+			print 'Snapshot.prime() creating a Document(%s), stored as %s' % (resource, doc.filename)
+			self.documents.append(doc)
 
 
 
