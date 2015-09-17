@@ -34,9 +34,7 @@ class HTML(Document):
 
 
 	def site_urls(self, debug=False):
-		print 'call __collect_urls'
 		self.__collect_urls(debug)
-		print 'returning ite_urls %r' % (self.__site_urls)
 		return self.__site_urls
 
 
