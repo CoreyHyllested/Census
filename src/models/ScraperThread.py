@@ -22,11 +22,10 @@ class ScraperThread(threading.Thread):
 		while not self.q.empty():
 
 			ts = dt.now()
-			document = self.q.get()
-			document.load(debug=True)
+			ss = self.q.get()
+			ss.collect_snapshot(debug=True)
 			ts_diff	 = dt.now() - ts
 
-#			self.doc_count = self.doc_count + 1
 #			if (document.doc_state == 0x200):	self.doc_dload = self.doc_dload + 1
 #			if (document.doc_state & 0x400):
 #				self.doc_error = self.doc_error + 1
