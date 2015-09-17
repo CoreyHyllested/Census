@@ -8,13 +8,12 @@ from models.documents import *
 
 
 class Website(object):
-	SECONDS = 5
+	SECONDS = 1
 
 	def __init__(self, website, site_ctx=None, debug=False):
 		self.uri	= urltools.normalize(website)
 		self.parsed	= urltools.parse(website.lower())
 		self.domain	= '.'.join(self.parsed[3:6]).lstrip('www.')
-#		self.access	= '.'.join(self.parsed[0:7])
 
 		self.robots = None
 		self.sitemap = None
@@ -34,7 +33,8 @@ class Website(object):
 		if (not self.__session):
 			self.__session = requests.Session()
 		return self.__session
-	
+
+
 
 	def sleep(self, seconds=None):
 		if (not seconds):
