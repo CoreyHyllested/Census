@@ -54,12 +54,11 @@ class Snapshot(object):
 		self.site_urls.extend( root.site_urls(debug=True) )
 		self.documents.append( root )
 
-		# randomize resource list
 		self.site_urls = list(set(self.site_urls))
 		random.shuffle(self.site_urls, random.random)
 		for resource in self.site_urls[:count]:
 			doc = Document(self.website, snapshot=self, resource=resource)
-			print 'Snapshot.prime() creating a Document(%s), stored as %s' % (resource, doc.filename)
+			#print 'Snapshot.prime() creating a Document(%s), stored as %s' % (resource, doc.filename)
 			self.documents.append(doc)
 
 
