@@ -2,7 +2,8 @@ import sys, os, time, json
 from pprint		import pprint as pp
 from datetime	import datetime as dt 
 
-from models.documents.Document import *
+from models.documents.Document	import *
+from models.documents.HTML		import *
 
 
 class SnapshotState(object):
@@ -18,13 +19,16 @@ class Snapshot(object):
 	def __init__(self, website=None, context=None):
 		self.website	= website
 		self.documents	= []
+		self.site_urls	= []
+		self.visited	= []
 
-		self.state		= SnapshotState.EMPTY
 		self.timestamp	= dt.now()
+		self.state		= SnapshotState.EMPTY
 
 		location = self.location()
 		if (not os.path.exists(location)):
 			os.makedirs(location)
+		self.site_urls.extend( self.website.sitemap )
 
 
 
@@ -46,12 +50,14 @@ class Snapshot(object):
 
 
 	def prime(self, count=5):
-		root = Document(self.website, snapshot=self, resource='/', name='root').get_document(debug=True)
-		urls = root.find_urls(all_urls=False)
-		self.documents.append(root)
+		root = HTML(self.website, snapshot=self, resource='/', name='root').load(debug=True)
+		print 'got root document -- now check on urls'
+		self.site_urls.extend( root.site_urls(debug=True) )
+		self.documents.append( root )
 
-#		for document_id in xrange(count):
-#			self.documents.append( Document(self.website, self ))
+		print 'got root document -- extended urls -- now pick em'
+		for resource in self.site_urls[0:count]:
+			self.documents.append( Document(self.website, snapshot=self, resource=resource ))
 
 
 
