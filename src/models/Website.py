@@ -73,8 +73,7 @@ class Website(object):
 			self.snapshot.prime(5)
 		except Exception as e:
 			print type(e), e
-		finally:
-			pass
+		return self.snapshot
 
 
 
