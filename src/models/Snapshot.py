@@ -19,8 +19,7 @@ class Snapshot(object):
 	def __init__(self, website=None, context=None):
 		self.website	= website
 		self.documents	= []
-		self.site_urls	= []
-		self.visited	= []
+		self.count		= 5
 
 		self.timestamp	= dt.now()
 		self.state		= SnapshotState.EMPTY
@@ -29,7 +28,7 @@ class Snapshot(object):
 		location = self.location()
 		if (not os.path.exists(location)):
 			os.makedirs(location)
-		self.site_urls.extend( self.website.sitemap )
+		self.documents.extend( self.website.sitemap )
 
 
 
@@ -39,9 +38,14 @@ class Snapshot(object):
 
 
 	def collect_snapshot(self, debug=False):
-		for document in self.documents:
+		if (debug): print 'PRE-PRIME', self.website.domain, 'to collect %d of %d' % (self.count, len(self.documents))
+		self.prime(5)
+		if (debug): print 'POSTPRIME', self.website.domain, 'to collect %d of %d' % (self.count, len(self.documents))
+		pp(self.documents)
+
+		for document in self.documents[:self.count]:
 			document.load(debug=debug)
-		if (debug): print self.website.domain, 'cookies:'
+		print self.website.domain, 'cookies:'
 		pp(self.cookies())
 
 
@@ -73,16 +77,22 @@ class Snapshot(object):
 
 
 	def prime(self, count=5):
-		root = HTML(self.website, snapshot=self, resource='/', name='root').load(debug=True)
-		self.site_urls.extend( root.site_urls(debug=True) )
-		self.documents.append( root )
+		print 'Snapshot.prime(%s)'% (self.website.domain)
+		root = HTML(self.website, '/', snapshot=self, name='root').load(debug=True)
+		docs = root.documents(debug=True)
+		print self.website.domain, 'has collected %d documents' % (len(self.documents))
+	#	pp(docs)
 
-		self.site_urls = list(set(self.site_urls))
-		random.shuffle(self.site_urls, random.random)
-		for resource in self.site_urls[:count]:
-			doc = Document(self.website, snapshot=self, resource=resource)
-			#print 'Snapshot.prime() creating a Document(%s), stored as %s' % (resource, doc.filename)
-			self.documents.append(doc)
+		self.documents.append( root )
+		self.documents.extend( docs )
+		random.shuffle(self.documents, random.random)
+
+		self.count = count
+
+#		self.visit = self.docsuments[:count]
+#			doc = Document(self.website, url, snapshot=self)
+			#print 'Snapshot.prime() creating a Document(%s), stored as %s' % (url, doc.filename)
+#			self.documents.append(doc)
 
 
 
