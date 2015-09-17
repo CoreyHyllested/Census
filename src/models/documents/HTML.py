@@ -19,24 +19,28 @@ class HTML(Document):
 	def parse(self, debug=False):
 		self.__documents = []
 		soup = BS4(self.content())
-		tags = soup.find_all('a')
+		tags_anchors = soup.find_all('a')
+		tags_images	 = soup.find_all('img')
 		urls = []
 		site = []
 		imgs = []
 		docs = []
 
 		urls_origin = urltools.parse(self.url)[4:6]
-		for anchor in tags:
+		for anchor in tags_anchors:
 			href = anchor.get('href')
-			urls.append( href )
 
+			if (not href):			continue
+			if (href[0]	== '#'):	continue
+
+			print 'href (%s)' % href
+			urls.append( href )
 			if ((href[-4:] == '.img') or (href[-4:] == '.png') or (href[-4:] == '.jpg') or (href[-5:] == '.jpeg')):
 				imgs.append( href )
 				continue
 			if ((href[-4:] == '.pdf') or (href[-4:] == '.doc') or (href[-5:] == '.docx')):
 				docs.append( href )
 				continue
-			if (href[0] == '#'): continue
 
 			try:
 				self.__documents.append( Document(self.website, href, self.snapshot) )
@@ -45,6 +49,17 @@ class HTML(Document):
 		self.__page_urls = set(urls)
 		self.__site_urls = set(site)
 		if (debug): print '%s/%s has %d urls, %d internal' % (self.website.domain, self.filename, len(self.__page_urls), len(self.__site_urls))
+
+
+
+	def parse_anchors(self, tags):
+		for anchor in tags:
+			href = anchor.get('href')
+			print 'href (%s)' % href
+
+			if (href	== None):	continue
+			if (href[0] == '#'):	continue
+
 
 
 	def documents(self, debug=False):
