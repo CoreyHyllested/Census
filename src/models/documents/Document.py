@@ -14,21 +14,35 @@ class Document(object):
 	def __init__(self, website, snapshot=None, resource=None, force_webcache=False, name=None):
 		self.website	= website
 		self.snapshot	= snapshot
-		self.resource	= resource
-		self.filename	= str(self.resource).lstrip('/')
+		self.resource	= Document.normalize_url_path(resource)
+		self.filename	= self.__normalize_resource_name(name)
 		if (name): self.filename = name
 
 		self.__content	= None
 		self.timestamp	= dt.now().strftime('%Y-%m-%d')
-		self.url		= urltools.normalize(website.uri + str(resource))
+		self.url		= urltools.normalize(website.uri + str(self.resource))
 
 		self.use_webcache = force_webcache
 	
 
 	def __repr__ (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
 	def __str__  (self): return '<Document %r/%r>' % (self.website.domain, self.resource)
-
 	def content	 (self): return self.__content
+
+
+	@staticmethod
+	def normalize_url_path(path):
+		return urltools.parse(path)[7]
+
+
+	def __normalize_resource_name(self, name=None):
+		if (name): return name
+
+		name = self.resource
+		if (name == '/'): name = 'root'
+		return name.lstrip('/').replace('/', '_')
+
+
 
 
 
@@ -54,7 +68,7 @@ class Document(object):
 		self.__load_doc(debug)
 
 		if (self.__content == None):
-			self.get_document()	# will download
+			self.get_document(debug)
 		return self
 
 

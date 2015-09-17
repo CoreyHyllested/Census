@@ -21,7 +21,7 @@ class Sitemap(Document):
 			prio = url.find('priority')
 			freq = url.find('changefreq')
 			last = url.find('lastmod')
-			self.sitemap_urls.append(uri.string)
+			self.sitemap_urls.append( Document.normalize_url_path(uri.string) )
 #		pp(self.sitemap_urls)
 
 
