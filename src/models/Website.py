@@ -67,11 +67,9 @@ class Website(object):
 
 
 	def create_snapshot(self, context=None):
-		print 'create snapshot'
 		self.snapshot = Snapshot(self, context=None)
 
 		try:
-#			self.snapshot.prime_snapshot()		Get robots, humans, sitemap.xml
 			self.snapshot.prime(5)
 		except Exception as e:
 			print type(e), e
