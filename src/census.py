@@ -1,5 +1,5 @@
 import sys, os, threading
-import socks, socket, urllib3, requests
+import socks, socket, requests
 import re, random, time
 import cmd, argparse
 import Queue
@@ -10,9 +10,8 @@ from datetime	import datetime as dt
 from models		import *
 
 from models.Snapshot			import *
-from models.documents.Document	import *
 
-VERSION = 0.03
+VERSION = 0.08
 UA_VER	= 0.1
 THREADS	= 1
 
@@ -20,8 +19,11 @@ threads	= []
 
 
 
+requests.packages.urllib3.disable_warnings()
+
+
 def configure_network(args):
-	urllib3.disable_warnings()
+	requests.packages.urllib3.disable_warnings()
 	host_response = requests.get('http://icanhazIP.com')
 
 	def create_connection(address, timeout=None, source_address=None):
@@ -57,18 +59,12 @@ def configure_db():
 
 
 def load_sources(config_params):
-	sources = []
-	sources.append( Website('https://soulcrafting.co') )
-
-	if (False):
-		random.shuffle(sources, random.random)
-
 	q = Queue.Queue()
-	for website in sources:
-		snapshot = website.create_snapshot()
-		docs = snapshot.documents
-		for document in docs:
-			q.put(document)
+#	q.put( Website('https://soulcrafting.co').create_snapshot()		)
+	q.put( Website('https://www.yahoo.com').create_snapshot()		)
+	q.put( Website('https://amazon.com').create_snapshot()			)
+#	q.put( Website('https://nytimes.com').create_snapshot()			)
+#	q.put( Website('https://www.google.com').create_snapshot()		)
 
 	print 'PrivacyCensus - queue size %d' % (q.qsize())
 	return q
@@ -81,6 +77,7 @@ def load_sources(config_params):
 if __name__ == '__main__':
 	print 'PrivacyCensus v' + str(VERSION)
 	parser = argparse.ArgumentParser(description='Scrape, normalize, and process html, javascript, and cookies')
+	parser.add_argument('-T', '--tor',			action='store_true',	help='use Tor')
 	parser.add_argument('-V', '--verbose',		action='store_true',	help='increase verbosity')
 	parser.add_argument('-O', '--overwrite',	action='store_true',	help='Overwrite output file')
 	parser.add_argument('-S', '--source',								help='Single source')
