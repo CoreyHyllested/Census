@@ -1,18 +1,14 @@
-import sys, os, random, time
-import requests, ssl, certifi
 from pprint		import pprint as pp
-from datetime	import datetime as dt 
 from bs4 import BeautifulSoup as BS4
 from bs4 import Comment
 from models.Website  import *
 from models.Snapshot import *
-
 from models.documents.Document import *
 
 
 class Sitemap(Document):
-	def __init__(self, website, resource=None, force_webcache=False):
-		super(Sitemap, self).__init__(website, resource, force_webcache)
+	def __init__(self, website, snapshot=None, resource=None, name=None):
+		super(Sitemap, self).__init__(website, snapshot, resource, name=name)
 		self.sitemap_urls = []
 
 

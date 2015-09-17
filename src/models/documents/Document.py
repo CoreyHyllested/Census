@@ -15,7 +15,7 @@ class Document(object):
 		self.website	= website
 		self.snapshot	= snapshot
 		self.resource	= resource
-		self.filename = str(self.resource).lstrip('/')
+		self.filename	= str(self.resource).lstrip('/')
 		if (name): self.filename = name
 
 		self.__content	= None
@@ -55,12 +55,13 @@ class Document(object):
 
 		if (self.__content == None):
 			self.get_document()	# will download
+		return self
 
 
 
 	def get_document(self, debug=False):
 		try:
-			if (debug): print '%s get_document(%r)' % (self.website.domain, self.resource)
+			if (debug): print '%s get_document(%s)' % (self.website.domain, self.filename)
 			self.__download(debug)
 		except Exception as e:
 			print 're-raising', type(e), e
@@ -135,10 +136,10 @@ class Document(object):
 
 	def __load_doc(self, debug=False):
 		if (self.__content): return self.__content
-		if (debug): print 'load_doc %s/%s' % (self.website, self.resource)
 
 		fp = None
 		try:
+			if (debug): print 'loading document %s/%s' % (self.website.domain, self.filename)
 			fp = open(self.__cache_path(), 'r')
 			self.__content = fp.read()
 		except IOError:
