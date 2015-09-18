@@ -10,6 +10,8 @@ from datetime	import datetime as dt
 from models		import *
 
 from models.Snapshot			import *
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
 VERSION = 0.08
 UA_VER	= 0.1
@@ -58,20 +60,6 @@ def configure_db():
 
 
 
-def load_sources(config_params):
-	q = Queue.Queue()
-#	q.put( Website('https://soulcrafting.co').create_snapshot()		)
-	q.put( Website('https://www.yahoo.com').create_snapshot()		)
-	q.put( Website('https://amazon.com').create_snapshot()			)
-#	q.put( Website('https://nytimes.com').create_snapshot()			)
-#	q.put( Website('https://www.google.com').create_snapshot()		)
-
-	print 'PrivacyCensus - queue size %d' % (q.qsize())
-	return q
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -86,14 +74,15 @@ if __name__ == '__main__':
 	#configure_network(args)
 	configure_db()
 
-	q = load_sources(args)
-	for thread_id in xrange(THREADS):
-		print 'PrivacyCensus - starting thread %d' % (thread_id)
-		t = ScraperThread(q, id=thread_id, debug=True)
-		t.start()
-		threads.append(t)
+	driver = webdriver.Firefox()
+	driver.get("https://soulcrafting.co")
+	for x in xrange(5):
+		links = driver.find_elements_by_partial_link_text('')
+		random.shuffle(links, random.random)
+		links.pop().click()
 
-	for thread in threads:
-		thread.join()
+#		driver.findElement(By.xpath("//a[contains(.,'')]")).click();
+	driver.close()
+	pp(driver.get_cookies())
 
 	sys.exit()
