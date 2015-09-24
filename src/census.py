@@ -9,6 +9,7 @@ from pprint		import pprint as pp
 from datetime	import datetime as dt 
 from models		import *
 
+#from models.Scrape				import *
 from models.Snapshot			import *
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -74,15 +75,23 @@ if __name__ == '__main__':
 	#configure_network(args)
 	configure_db()
 
-	driver = webdriver.Firefox()
-	driver.get("https://soulcrafting.co")
-	for x in xrange(5):
-		links = driver.find_elements_by_partial_link_text('')
-		random.shuffle(links, random.random)
-		links.pop().click()
+#	driver = webdriver.Firefox()
+	driver = webdriver.PhantomJS('phantomjs')
+
+#	driver.set_window_size(1120, 550)
+	driver.get("https://www.google.com/")
+	driver.find_element_by_name('q').send_keys("realpython")
+	driver.find_element_by_name("btnG").click()
+	print driver.current_url
+
+#	for x in xrange(5):
+#		links = driver.find_elements_by_partial_link_text('')
+#		random.shuffle(links, random.random)
+#		links.pop().click()
 
 #		driver.findElement(By.xpath("//a[contains(.,'')]")).click();
+#	pp(driver.get_cookies())
 	driver.close()
-	pp(driver.get_cookies())
+
 
 	sys.exit()
